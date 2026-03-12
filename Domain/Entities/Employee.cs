@@ -17,10 +17,29 @@ namespace Domain.Entities
 
         public string LastName { get; set; }
 
-        public int? ManagerUserId { get; set; }
+        public string Address {  get; set; }
+
+        public string ProfilePhoto {get; set; }
+
+        public string Phone { get; set; }
+
+        
+        public int? DesignationId {  get; set; }
+        public Designation Designation { get; set; }
+        public int? DepartmentId { get; set; }
+
+        public Department Department { get; set; }
+
+        public int? ManagerId { get; set; }
+        public Employee Manager { get; set; }
+
+        public ICollection<Employee> Subordinates { get; set; }
 
         public DateTime JoiningDate { get; set; }
 
-        
+        public ICollection<LeaveRequest> LeaveRequests { get; set; }
+
+        public ICollection<Attendance> Attendances { get; set; }
+
     }
 }

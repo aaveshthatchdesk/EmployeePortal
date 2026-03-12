@@ -1,0 +1,289 @@
+﻿@page "/admindashboard"
+@using Application.Dtos
+@using Application.Interfaces.IService
+@using Application.Interfaces.IService.Admin
+@inject IDashboardSummaryService _summaryservice
+@inject IAttendanceChartService _attendanceChart
+<style>
+    .stat-card {
+        background: #f5f6f7;
+        border: none;
+        padding: 20px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stat-number {
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .stat-text {
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .icon-box {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .attendance-card {
+        border: none;
+        border-radius: 12px;
+        padding: 25px;
+        background: #f5f6f7;
+    }
+
+    .week-select {
+        width: 140px;
+    }
+
+    .chart-container {
+        height: 180px;
+    }
+
+    .bar-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bar {
+        width: 28px;
+        background: #2C3e50;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+
+    .bar-item span {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .dept-card {
+        border: none;
+        border-radius: 12px;
+        padding: 20px;
+        background: #f5f6f7;
+    }
+
+    .dept-item {
+        margin-bottom: 20px;
+    }
+
+    .progress {
+        height: 8px;
+        border-radius: 10px;
+        background: #e5e7eb;
+    }
+
+    .progress-bar {
+        border-radius: 10px;
+    }
+
+    .bg-purple {
+        background-color: #8e44ad;
+    }
+</style>
+<div class="container-fluid">
+
+    <div class="container mt-4">
+        <div class="row g-4">
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card">
+                    @* <div class="text-primary fs-3 mb-2">
+                        <i class="bi bi-diagram-3"></i>
+                    </div> *@
+                    <div class="d-flex align-items-center justify-content-between w-100">
+                    <div>
+                    <h4 class="stat-number">@dashboardSummaryDto.TotalEmployees</h4>
+                    <p class="stat-text">Total Employees</p>
+                    </div>
+
+                    <div class="stat-icon blue">
+                        <i class="fas fa-users fs-3"></i>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card">
+                    <div class="d-flex align-items-center justify-content-between w-100">
+               <div>
+                        <h4 class="stat-number">@dashboardSummaryDto.PresentToday</h4>
+                        <p class="stat-text">Present Today</p>
+                        </div>
+                    <div class="stat-icon green">
+                        <i class="fas fa-user-check fs-3"></i>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card">
+                    <div class="d-flex align-items-center justify-content-between w-100">
+                    @* <div class="text-primary fs-3 mb-2">
+                        <i class="bi bi-list-check"></i>
+                    </div> *@
+                    <div>
+                        <h4 class="stat-number">@dashboardSummaryDto.OnLeave</h4>
+                    <p class="stat-text">On Leave</p>
+                    </div>
+                    <div class="stat-icon orange">
+                        <i class="fas fa-clock fs-3"></i>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card">
+                    <div class="d-flex align-items-center justify-content-between w-100">
+                    @* <div class="text-primary fs-3 mb-2">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div> *@
+                    <div>
+                    <h4 class="stat-number">@dashboardSummaryDto.PendingRequests</h4>
+                    <p class="stat-text">Pending Requests</p>
+                        </div>
+                    <div class="stat-icon purple">
+                        <i class="fas fa-hourglass-half fs-3"></i>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="container mt-4">
+
+        <div class="row ">
+        <div class="col-md-7 col-sm-12">
+        <div class="card attendance-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0 fw-bold">Attendance Overview</h5>
+
+                <select class="form-select week-select">
+                    <option>This Week</option>
+                    <option>Last Week</option>
+                </select>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-end chart-container">
+
+                <div class="bar-item">
+                    <div class="bar" style="height:80px"></div>
+                    <span>Mon</span>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar" style="height:110px"></div>
+                    <span>Tue</span>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar" style="height:95px"></div>
+                    <span>Wed</span>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar" style="height:120px"></div>
+                    <span>Thu</span>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar" style="height:100px"></div>
+                    <span>Fri</span>
+                </div>
+
+            </div>
+
+        </div>
+        </div>
+            <div class="col-md-1 d-none d-md-block"></div>
+        <div class="col-md-4 col-sm-12">
+          
+                <div class="card dept-card">
+
+                    <h5 class="fw-bold mb-4">Department Distribution</h5>
+
+                    <div class="dept-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Development</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" style="width:45%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dept-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Marketing</span>
+                            <span>25%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width:25%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dept-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Sales</span>
+                            <span>20%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" style="width:20%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dept-item">
+                        <div class="d-flex justify-content-between">
+                            <span>HR</span>
+                            <span>10%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-purple" style="width:10%"></div>
+                        </div>
+                    </div>
+           </div>
+    </div>
+    </div>
+</div>
+</div>
+
+
+@code {
+
+    private DashboardSummaryDto dashboardSummaryDto = new();
+    private List<AttendanceChartDto> attendanceChart = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboard();
+        await LoadAtttendance();
+    }
+    public async Task LoadDashboard()
+    {
+        dashboardSummaryDto = await _summaryservice.DashboardSummary();
+
+    }
+    public async Task LoadAtttendance()
+    {
+        attendanceChart = await _attendanceChart.GetAttendanceOverView();
+    }
+
+}
