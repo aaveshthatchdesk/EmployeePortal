@@ -4,6 +4,7 @@ using Application.Interfaces.IService;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 using static Domain.Enums.Step;
 
@@ -18,6 +19,25 @@ namespace Application.Services
             _employeeRepository = employeeRepository;
         }
 
+
+        public async Task<EmployeesSummary> DashboardSummary()
+        {
+            var today = DateTime.Now;
+            var totalemployees = await _employeeRepository.GetTotalEmployees();
+            var activeemployees = await _employeeRepository.GetActiveEmployees(today);
+            var employeesOnLeave = await _employeeRepository.GetEmployessOnLeave(today);
+            var inactiveemployees=totalemployees-activeemployees-employeesOnLeave;
+
+            return new  EmployeesSummary
+            {
+                TotalEmployees = totalemployees,
+                Active = activeemployees,
+                OnLeave = employeesOnLeave,
+                InActive =inactiveemployees
+
+            };
+
+        }
         public async Task<PagedResult<EmployeeDto>> GetEmployeesByUserRole(int userId, string role, int pageNumber, int pageSize, string? search)
         {
            
@@ -67,5 +87,36 @@ namespace Application.Services
                
             };
         }
+
+        public async Task AddEmployeeAsync(AddEmployeeDto dto)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(dto.Password));
+
+            var user = new Users
+            {
+                Name = dto.UserName,
+                Email=dto.UserEmail,
+
+                 PasswordHash = Convert.ToBase64String(bytes)
+                //hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+            };
+
+            var employee = new Employee
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Address = dto.Address,
+                Phone = dto.Phone,
+                DepartmentId = dto.DepartmentId,
+                DesignationId = dto.DesignationId,
+                ManagerId = dto.ManagerId,
+                JoiningDate = dto.JoiningDate
+            };
+
+            await _employeeRepository.AddEmployeeWithUserAsync(user, employee, dto.Role);
+        }
+
+
     }
 }

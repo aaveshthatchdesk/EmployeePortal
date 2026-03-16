@@ -23,5 +23,12 @@ namespace Infrastructure.Repositories
                  Include(u => u.Roles)
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
+
+        public async Task<Users> AddUser(Users user)
+        {
+            await context.AddAsync(user);
+            await context.SaveChangesAsync();
+            return user;
+        }
     }
 }

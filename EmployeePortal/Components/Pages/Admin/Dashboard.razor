@@ -1,7 +1,9 @@
 ﻿@page "/admindashboard"
+
 @using Application.Dtos
 @using Application.Interfaces.IService
 @using Application.Interfaces.IService.Admin
+@using Microsoft.AspNetCore.Authorization
 @inject IDashboardSummaryService _summaryservice
 @inject IAttendanceChartService _attendanceChart
 <style>

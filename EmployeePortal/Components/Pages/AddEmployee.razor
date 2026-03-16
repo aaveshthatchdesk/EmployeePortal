@@ -1,0 +1,170 @@
+﻿@using Application.Dtos
+@using Application.Interfaces.IService
+@inject IEmployeeService _employeeService
+
+<div class="modal fade show d-block" style="background:rgba(0,0,0,0.4)">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>Add Employee</h5>
+                <button class="btn-close" @onclick="Close"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Stepper Header -->
+                <div class="d-flex justify-content-between mb-4">
+                    <div class="step @(step >= 1 ? "active" : "")">1. User</div>
+                    <div class="step @(step >= 2 ? "active" : "")">2. Employee</div>
+                </div>
+
+                <EditForm Model="model" OnValidSubmit="Save">
+
+                    @if (step == 1)
+                    {
+                        <h5>User Information</h5>
+
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <label>Username</label>
+                                <InputText class="form-control" @bind-Value="model.UserName" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label>Email</label>
+                                <InputText class="form-control" @bind-Value="model.UserEmail" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Password</label>
+                                <InputText type="password" class="form-control" @bind-Value="model.Password" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Role</label>
+                                <InputSelect class="form-control" @bind-Value="model.Role">
+                                    <option value="Employee">Employee</option>
+                                    <option value="Admin">Admin</option>
+                                </InputSelect>
+                            </div>
+
+                        </div>
+                    }
+
+                    @if (step == 2)
+                    {
+                        <h5>Employee Information</h5>
+
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <label>First Name</label>
+                                <InputText class="form-control" @bind-Value="model.FirstName" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label>Last Name</label>
+                                <InputText class="form-control" @bind-Value="model.LastName" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Phone</label>
+                                <InputText class="form-control" @bind-Value="model.Phone" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Address</label>
+                                <InputText class="form-control" @bind-Value="model.Address" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Department</label>
+                                <InputNumber class="form-control" @bind-Value="model.DepartmentId" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Designation</label>
+                                <InputNumber class="form-control" @bind-Value="model.DesignationId" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Manager</label>
+                                <InputNumber class="form-control" @bind-Value="model.ManagerId" />
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Joining Date</label>
+                                <InputDate class="form-control" @bind-Value="model.JoiningDate" />
+                            </div>
+
+                        </div>
+                    }
+
+                    <div class="mt-4 d-flex justify-content-between">
+
+                        @if (step > 1)
+                        {
+                            <button type="button" class="btn btn-secondary" @onclick="Previous">
+                                Back
+                            </button>
+                        }
+
+                        @if (step < 2)
+                        {
+                            <button type="button" class="btn btn-primary" @onclick="Next">
+                                Next
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-success">
+                                Save Employee
+                            </button>
+                        }
+
+                    </div>
+
+                </EditForm>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+@code {
+    private int step = 1;
+
+    private AddEmployeeDto model = new();
+
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+    void Next()
+    {
+        step++;
+    }
+
+    void Previous()
+    {
+        step--;
+    }
+
+    async Task Save()
+    {
+        await _employeeService.AddEmployeeAsync(model);
+
+        await OnSaved.InvokeAsync();
+        await OnClose.InvokeAsync();
+    }
+
+    async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

@@ -1,7 +1,11 @@
 ﻿@page "/employeelist"
 @using Application.Dtos
+@rendermode InteractiveServer
 @using Application.Interfaces.IService
 @using System.Security.Claims
+
+
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 
 @inject AuthenticationStateProvider AuthStateProvider
@@ -29,7 +33,7 @@
                         <i class="bi bi-search"></i>
                     </span>
                 </div>
-                 <button class="btn btn-add btn-sm px-3 shadow-sm d-flex align-items-center " style="border-radius: 8px; height:40px; background-color:#2c3e50; color:white;" >
+                    <button class="btn btn-add btn-sm px-3 shadow-sm d-flex align-items-center " style="border-radius: 8px; height:40px; background-color:#2c3e50; color:white;" @onclick="ShowAddEmployeeForm">
                 + Add Employee
             </button>
                 </div>
@@ -44,13 +48,13 @@
 
                          
                     <div class="d-flex justify-content-center align-items-center ">
-                                    <i class="bi bi-list-task fs-2 text-primary"></i>
+                                    <i class="fas fa-users fs-3"></i>
 
-                        <h6 class="text-center ms-2">employess</h6>
+                        <h3 class="text-center ms-2">@employeesSummary.TotalEmployees</h3>
 
 
                     </div>
-                    <h3 class="fw-bold mt-2 text-center">Total Employees</h3>
+                    <h4 class=" mt-2 text-center">Total Employees</h4>
                       </div>
                             </div>
                         </div>
@@ -60,12 +64,12 @@
 
 
                                     <div class="d-flex justify-content-center align-items-center">
-                                    <i class="bi bi-play-circle fs-2 text-info"></i>
-                                        <h6 class="text-center ms-2">ACTIVE </h6>
+                                    <i class="fas fa-user-check fs-3 "></i>
+                                        <h3 class="text-center ms-2">@employeesSummary.Active </h3>
 
 
                                     </div>
-                                    <h3 class="fw-bold mt-2 text-center">Active</h3>
+                                    <h4 class=" mt-2 text-center">Active</h4>
                                 </div>
                             </div>
                         </div>
@@ -75,12 +79,12 @@
 
 
                                     <div class="d-flex justify-content-center align-items-center">
-                                    <i class="bi bi-exclamation-triangle fs-2 text-danger"></i>
-                                        <h6 class="text-center ms-2">On Leave</h6>
+                                    <i class="fas fa-clock fs-3"></i>
+                                        <h3 class="text-center ms-2">@employeesSummary.OnLeave</h3>
 
 
                                     </div>
-                                    <h3 class="fw-bold mt-2 text-center">On Leave</h3>
+                                    <h4 class=" mt-2 text-center">On Leave</h4>
                                 </div>
                             </div>
                         </div>
@@ -90,12 +94,12 @@
 
 
                                     <div class="d-flex justify-content-center align-items-center">
-                                    <i class="bi bi-check-circle fs-2 text-success"></i>
-                                        <h6 class="text-center ms-2">InActive</h6>
+                                    <i class=" fas fa-user-xmark fs-3"></i>
+                                        <h3 class="text-center ms-2">@employeesSummary.InActive</h3>
 
 
                                     </div>
-                                    <h3 class="fw-bold mt-2 text-center">Inactive</h3>
+                                    <h4 class=" mt-2 text-center">Inactive</h4>
                                 </div>
                             </div>
                         </div>
@@ -228,11 +232,18 @@
                         </div>
 
                         </div>
+ @if(showAddEmployee)
+{
+    <AddEmployee 
+        OnClose="CloseAddEmployeeForm"
+        OnSaved="ReloadEmployees"/>
+}
 
 @code {
 
     private List<EmployeeDto> pagedEmployees = new();
     private List<EmployeeDto> employee;
+    private EmployeesSummary employeesSummary=new();
 
     private int currentPage = 1;
     private int pageSize = 8;
@@ -240,20 +251,42 @@
     private string searchTerm = "";
     private int userId;
     private string role;
-
+    private bool showAddEmployee=false;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user=authState.User;
+        Console.WriteLine(user.Identity.IsAuthenticated);
+        Console.WriteLine(user.Identity.AuthenticationType);
         if (user.Identity?.IsAuthenticated == true)
         {
             userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             role = user.FindFirst(ClaimTypes.Role)?.Value;
         }
+
+        Console.WriteLine(user.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        await LoadSummary();
         await LoadEmployees();
     }
+    public async Task LoadSummary()
+    {
+      employeesSummary= await _employeeService.DashboardSummary();
+    }
+    private void ShowAddEmployeeForm()
+    {
+        showAddEmployee = true;
+    }
 
+    private void CloseAddEmployeeForm()
+    {
+        showAddEmployee = false;
+    }
+
+    private async Task ReloadEmployees()
+    {
+        await LoadEmployees();
+    }
     public async Task LoadEmployees()
     {
         var result = await _employeeService.GetEmployeesByUserRole(userId, role, currentPage, pageSize, searchTerm);

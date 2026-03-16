@@ -30,7 +30,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/";
         options.Cookie.Name = "EmployeePortalAuth";
+
+   
         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
 builder.Services.AddScoped<IDashboardSummaryRepository, DashboardSummaryRepository>();
@@ -41,6 +46,7 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeService,EmployeeService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -53,7 +59,16 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped(sp =>
 {
     var nav = sp.GetRequiredService<NavigationManager>();
-    return new HttpClient { BaseAddress = new Uri(nav.BaseUri) };
+    //return new HttpClient { BaseAddress = new Uri(nav.BaseUri) };
+    var handler = new HttpClientHandler
+    {
+        UseCookies = true
+    };
+
+    return new HttpClient(handler)
+    {
+        BaseAddress = new Uri(nav.BaseUri)
+    };
 });
 //builder.Services.AddScoped(sp =>
 //{
@@ -70,11 +85,26 @@ var app = builder.Build();
 
 
 
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
+
 app.MapPost("/api/login", async (
     LoginDto loginDto,
     IAuthService authService, HttpContext httpContext) =>
 {
-    var user =await authService.Login(loginDto);
+    var user = await authService.Login(loginDto);
     if (user == null)
         return Results.Unauthorized();
     var claims = new List<Claim>
@@ -96,20 +126,6 @@ app.MapPost("/api/login", async (
     return Results.Ok();
 }
 );
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseAntiforgery();
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

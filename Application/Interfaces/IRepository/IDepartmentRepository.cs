@@ -5,9 +5,9 @@ using System.Text;
 
 namespace Application.Interfaces.IRepository
 {
-    public  interface IUserRepository
+    public interface IDepartmentRepository
     {
-        Task<Users> GetUserByEmail(string email);
-        Task<Users> AddUser(Users user);
+        Task<List<Department>> GetDepartments();
+        Task<List<Designation>> GetDesignations();
     }
 }
