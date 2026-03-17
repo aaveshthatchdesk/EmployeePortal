@@ -35,11 +35,15 @@ namespace Application.Services
             //if (hashedPassword != user.PasswordHash)
             //    return null;
 
-            if (loginDto.Password != user.PasswordHash)
+            //if (loginDto.Password != user.PasswordHash)
+            //    return null;
+
+            if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                 return null;
 
             return new UserDto
             {
+                Id=user.Id,
                 Email = user.Email,
                 Role = user.Roles?.Name
             };

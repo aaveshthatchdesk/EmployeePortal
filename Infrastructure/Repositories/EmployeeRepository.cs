@@ -32,7 +32,23 @@ namespace Infrastructure.Repositories
         {
             return await _context.leaveRequests.Where(l => l.StartDate <= date && l.EndDate >= date && l.Status == LeaveStatus.Approved).CountAsync();
         }
-       
+
+        public async Task<List<Employee>> GetAllManagersAsync()
+        {
+            return await _context.employees
+                .Where(e => e.User.Roles.Name == "Manager")
+                .Select(e => new Employee
+                {
+                    Id = e.Id,
+                    FirstName = e.FirstName,
+                    LastName = e.LastName
+                })
+                .ToListAsync();
+        }
+        public async Task<List<Role>> GetAllRoles()
+        {
+            return await _context.roles.ToListAsync();
+        }
         public async Task<(List<Employee>,int TotalCount)> GetAllEmployeesAsync(int userId, string role, int pageNumber, int pageSize, string? search = null)
         {
           var query=  _context.employees.
@@ -56,8 +72,12 @@ namespace Infrastructure.Repositories
 
             else if (role == "Manager")
             {
-                query = query.Where(t => t.ManagerId == userId);
-
+                var managerEmployee = await _context.employees
+                        .FirstOrDefaultAsync(e => e.UserId == userId);
+                if (managerEmployee != null)
+                {
+                    query = query.Where(t => t.ManagerId == managerEmployee.Id);
+                }
             }
           
             var totalCount = await query.CountAsync();
@@ -80,12 +100,14 @@ namespace Infrastructure.Repositories
 
         public async Task AddEmployeeWithUserAsync(Users user, Employee employee, string roleName)
         {
+            if (string.IsNullOrWhiteSpace(roleName))
+                throw new Exception("Role name is required");
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
                 var role = await _context.roles
-                    .FirstOrDefaultAsync(r => r.Name == roleName);
+                    .FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
 
                 if (role == null)
                     throw new Exception("Role not found");

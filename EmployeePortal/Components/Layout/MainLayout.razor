@@ -1,4 +1,13 @@
-﻿@inherits LayoutComponentBase
+﻿
+@using Microsoft.AspNetCore.Components.Authorization
+
+@using System.Security.Claims
+
+@inherits LayoutComponentBase
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager nav;
+@inject HttpClient http;
 
 <div class="page">
     <div class="sidebar">
@@ -7,7 +16,20 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <div class="profile-container">
+                <div class="avatar" @onclick="ToggleMenu">
+                    @UserInitial
+                </div>
+
+                @if (showMenu)
+                {
+                    <div class="dropdown-menu show">
+                        <button class="dropdown-item" @onclick="Logout">
+                            Logout
+                        </button>
+                    </div>
+                }
+            </div>
         </div>
 
         <article class="content px-4">
@@ -21,3 +43,34 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code{
+    private bool showMenu = false;
+    private string UserInitial = "";
+    private string email;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        Console.WriteLine(user.Identity.IsAuthenticated);
+        Console.WriteLine(user.Identity.AuthenticationType);
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            email = user.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(email))
+            {
+                UserInitial = email.Substring(0, 1).ToUpper();
+            }
+        }
+    }
+    private void ToggleMenu()
+    {
+        showMenu = !showMenu;
+    }
+    private async Task Logout()
+    {
+        await http.PostAsync("/api/logout", null);
+        nav.NavigateTo("/login", true);
+    }
+}

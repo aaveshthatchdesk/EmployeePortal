@@ -38,6 +38,28 @@ namespace Application.Services
             };
 
         }
+
+        public async Task<List<EmployeeDto>> GetManagers()
+        {
+            var managers = await _employeeRepository.GetAllManagersAsync();
+
+            return managers.Select(e => new EmployeeDto
+            {
+                Id = e.Id,
+                FullName = $"{e.FirstName} {e.LastName}"
+            }).ToList();
+        }
+        public async Task<List<RolesDto>> GetAllRolesAsync()
+        {
+            var roles = await _employeeRepository.GetAllRoles();
+
+            return roles.Select(d => new RolesDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+
+            }).ToList();
+        }
         public async Task<PagedResult<EmployeeDto>> GetEmployeesByUserRole(int userId, string role, int pageNumber, int pageSize, string? search)
         {
            
@@ -97,9 +119,9 @@ namespace Application.Services
             {
                 Name = dto.UserName,
                 Email=dto.UserEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                
 
-                 PasswordHash = Convert.ToBase64String(bytes)
-                //hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password)
             };
 
             var employee = new Employee
@@ -108,10 +130,12 @@ namespace Application.Services
                 LastName = dto.LastName,
                 Address = dto.Address,
                 Phone = dto.Phone,
+               
                 DepartmentId = dto.DepartmentId,
                 DesignationId = dto.DesignationId,
                 ManagerId = dto.ManagerId,
-                JoiningDate = dto.JoiningDate
+                JoiningDate = dto.JoiningDate,
+                ProfilePhoto = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "/images/default-avatar.png" : dto.ImageUrl
             };
 
             await _employeeRepository.AddEmployeeWithUserAsync(user, employee, dto.Role);

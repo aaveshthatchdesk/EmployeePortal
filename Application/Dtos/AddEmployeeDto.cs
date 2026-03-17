@@ -28,6 +28,8 @@ namespace Application.Dtos
 
         public string Password { get; set; }
 
+        public int? RoleId { get; set;}
         public string  Role { get; set; }
+        public string? ImageUrl {  get; set; }
     }
 }

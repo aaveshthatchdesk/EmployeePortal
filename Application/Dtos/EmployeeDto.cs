@@ -12,6 +12,7 @@ namespace Application.Dtos
 
         public string? LastName { get; set; }
 
+        public string FullName {  get; set; }= string.Empty;
         public string Name=> $"{FirstName} {LastName}";
         public string Address { get; set; }
         public string Designation { get; set; }

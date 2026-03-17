@@ -12,6 +12,9 @@ namespace Application.Interfaces.IRepository
         Task<int> GetTotalEmployees();
         Task<int> GetActiveEmployees(DateTime date);
         Task<int> GetEmployessOnLeave(DateTime date);
+        Task<List<Employee>> GetAllManagersAsync();
+        Task<List<Role>> GetAllRoles();
+
         Task<(List<Employee>, int TotalCount)> GetAllEmployeesAsync(int userId, string role, int pageNumber, int pageSize, string? search = null);
         Task AddEmployee(Employee employee);
         Task AddEmployeeWithUserAsync(Users user, Employee employee, string roleName);

@@ -1,9 +1,9 @@
 ﻿@page "/employeelist"
 @using Application.Dtos
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using Application.Interfaces.IService
 @using System.Security.Claims
-
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -11,6 +11,15 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IEmployeeService _employeeService
 
+<style>
+    .employee-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%; /* makes it circular */
+        object-fit: cover; /* prevents stretching */
+        border: 2px solid #ddd;
+    }
+</style>
 
 <div class=container-fluid mt-3 >
     <div class="card shadow border-0 rounded-4 overflow-hidden">
@@ -116,7 +125,8 @@
                                 <tr>
                                 <th style="background-color:#2c3e50;color:white">Sr.No</th>
 
-                                <th style="background-color:#2c3e50;color:white">Employee</th>
+
+                                <th class="ps-4" style="background-color:#2c3e50;color:white">Employee</th>
                                 <th style="background-color:#2c3e50;color:white">Department</th>
                                   
                                 <th style="background-color:#2c3e50;color:white" >Position</th>
@@ -151,12 +161,15 @@
                                     <tr class="task-row">
                                         
                                     <td class="align-middle text-center">@index</td>
-                                    <td class="task-desk-cell">
-                                        <div class="fw-semibold">@employee.Name</div>
-                                        @* <div class="text-muted small task-description">
-                                           Description
-                                        </div> *@
-                                      </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="@(string.IsNullOrEmpty(employee.ImageUrl)
+                                                                     ? "/images/default-user.png" 
+                                                                     : employee.ImageUrl)"
+                                                 class="employee-img" />
+                                            <span>@employee.Name</span>
+                                        </div>
+                                    </td>
                                         <td class="align-midddle">@employee.Department</td>
                                     <td class="align-midddle">@employee.Designation</td>
 

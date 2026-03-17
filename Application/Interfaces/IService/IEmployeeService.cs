@@ -10,6 +10,9 @@ namespace Application.Interfaces.IService
         Task<PagedResult<EmployeeDto>> GetEmployeesByUserRole(int userId, string role, int pageNumber, int pageSize, string? search);
         Task AddEmployeeAsync(AddEmployeeDto dto);
         Task<EmployeesSummary> DashboardSummary();
+
+        Task<List<EmployeeDto>> GetManagers();
+        Task<List<RolesDto>> GetAllRolesAsync();
     }
 
 

@@ -32,11 +32,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "EmployeePortalAuth";
 
    
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        //options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        //options.Cookie.HttpOnly = true;
+        //options.Cookie.SameSite = SameSiteMode.Lax;
+        //options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true; // Cross-site attacks prevent karega
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS ke liye
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Cookie expiration time
+    options.SlidingExpiration = true; // Auto-renew cookies
+    options.Cookie.SameSite = SameSiteMode.None; // Required for cross-origin
+});
 
 builder.Services.AddScoped<IDashboardSummaryRepository, DashboardSummaryRepository>();
 builder.Services.AddScoped<IDashboardSummaryService,DashboardSummaryService>(); 
@@ -47,6 +55,7 @@ builder.Services.AddScoped<IEmployeeService,EmployeeService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -111,7 +120,8 @@ app.MapPost("/api/login", async (
         {
 
           new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Email),
+          
+            new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role)
         };
     var identity = new ClaimsIdentity(
@@ -125,7 +135,14 @@ app.MapPost("/api/login", async (
         principal);
     return Results.Ok();
 }
-);
+).DisableAntiforgery();
+
+app.MapPost("/api/logout", async (HttpContext httpContext) =>
+
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Ok();
+});
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
