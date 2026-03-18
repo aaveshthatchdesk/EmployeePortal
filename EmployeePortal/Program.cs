@@ -6,6 +6,7 @@ using Application.Interfaces.IService.Admin;
 using Application.Services;
 using Application.Services.Admin;
 using EmployeePortal.Components;
+using EmployeePortal.Services;
 using Infrastructure.DbContexts;
 using Infrastructure.Repositories;
 using Infrastructure.Repositories.Admin;
@@ -56,6 +57,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<SpinnerService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -115,7 +117,13 @@ app.MapPost("/api/login", async (
 {
     var user = await authService.Login(loginDto);
     if (user == null)
-        return Results.Unauthorized();
+
+    {
+        return Results.BadRequest(new
+        {
+            message = "Invalid email or password"
+        });
+    }
     var claims = new List<Claim>
         {
 

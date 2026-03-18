@@ -15,11 +15,11 @@ namespace Domain.Entities
         public Users User { get; set; }
         public string FirstName { get; set; }
 
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
 
         public string Address {  get; set; }
 
-        public string ProfilePhoto {get; set; }
+        public string? ProfilePhoto {get; set; }
 
         public string Phone { get; set; }
 

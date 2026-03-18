@@ -1,0 +1,475 @@
+﻿@using Application.Dtos
+@using Application.Interfaces.IService
+@using System.Linq.Expressions
+@using EmployeePortal.Services
+@inject IEmployeeService _employeeService
+@inject IDepartmentService _department
+@inject SpinnerService spinnerService
+
+<style>
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 1000;
+        display: flex; /* 🔥 THIS WAS MISSING */
+        justify-content: center; /* horizontal center */
+        align-items: center;
+    }
+
+    .modal-box {
+        background: #f1f3f5;
+        padding: 20px;
+        border-radius: 12px;
+        width: 700px;
+        max-width: 90%; /* responsive */
+
+        max-height: 85vh; /* 🔥 limit height */
+        overflow-y: auto; /* scroll if needed */
+    }
+
+    .modal-title {
+        text-align: center;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    select.form-control {
+        appearance: auto; /* restore default arrow */
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+    }
+
+    .btn-create {
+        background: #2c3e50;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 12px;
+    }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+
+
+
+
+    .image-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .image-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .image-preview-wrapper {
+        width: 120px;
+        height: 120px;
+    }
+
+    .preview-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: contain;
+        background: #fff;
+        border: 2px solid #ccc;
+    }
+
+    .placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-size: 12px;
+        border: 2px dashed #ccc;
+    }
+
+    .file-input {
+        flex: 1;
+    }
+</style>
+
+<div class="modal-overlay">
+    <div class="modal-box">
+
+        <h4 class="modal-title"> Edit Employee</h4>
+
+        <EditForm EditContext="editContextEmployee" OnSubmit="Save">
+
+            <!-- First Name -->
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label>First Name <span class="text-danger">*</span></label>
+                    <InputText class="form-control" @bind-Value="updateEmployee.FirstName" placeholder="Enter first name"
+                               @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.FirstName, nameof(updateEmployee.FirstName), "FirstName is Required")) />
+                    <ValidationMessage For="() => updateEmployee.FirstName" />
+                </div>
+
+                <!-- Last Name -->
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <InputText class="form-control" @bind-Value=updateEmployee.LastName" placeholder="Enter last name" />
+                </div>
+            </div>
+            <div class="form-row">
+                <!-- Phone -->
+                <div class="form-group">
+                    <label>Phone<span class="text-danger">*</span></label>
+                    <InputText class="form-control" @bind-Value="updateEmployee.Phone" placeholder="Enter phone number"
+                               @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.Phone, nameof(updateEmployee.Phone), "Phone number is Required")) />
+                    <ValidationMessage For="() => updateEmployee.Phone" />
+                </div>
+
+
+                <div class="form-group">
+                    <label>Role<span class="text-danger">*</span></label>
+                    <InputSelect class="form-control" @bind-Value="updateEmployee.Role"
+                                 @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.Role, nameof(updateEmployee.Role), "Select role"))>
+                        <option value="">Select role</option>
+                        @foreach (var role in roles)
+                        {
+                            <option value="@role.Name">@role.Name</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => updateEmployee.Role" />
+                </div>
+                @if (updateEmployee.Role == "Employee")
+                {
+                    <!-- Manager -->
+                    <div class="form-group">
+                        <label>Manager<span class="text-danger">*</span></label>
+                        <InputSelect class="form-control" @bind-Value="updateEmployee.ManagerId"
+                                     @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.ManagerId, nameof(updateEmployee.ManagerId), "Select manager"))>
+                            <option value="">Select manager</option>
+                            @foreach (var mgr in managers)
+                            {
+                                <option value="@mgr.Id">@mgr.FullName</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => updateEmployee.ManagerId" />
+                    </div>
+                }
+            </div>
+            <!-- Address -->
+            <div class="form-group">
+                <label>Address<span class="text-danger">*</span></label>
+                <InputTextArea class="form-control" @bind-Value="updateEmployee.Address" placeholder="Enter address"
+                               @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.Address, nameof(updateEmployee.Address), "Address is Required")) />
+                <ValidationMessage For="() => updateEmployee.Address" />
+            </div>
+
+
+            <div class="form-row">
+
+
+                <!-- Department -->
+                <div class="form-group">
+                    <label>Department <span class="text-danger">*</span></label>
+                    <InputSelect class="form-control" @bind-Value="updateEmployee.DepartmentId"
+                                 @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.DepartmentId, nameof(updateEmployee.DepartmentId), "Select department"))>
+                        <option value="">Select department</option>
+                        @foreach (var dept in departments)
+                        {
+                            <option value="@dept.Id">@dept.Name</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => updateEmployee.DepartmentId" />
+                </div>
+
+                <!-- Designation -->
+                <div class="form-group">
+                    <label>Designation <span class="text-danger">*</span></label>
+                    <InputSelect class="form-control" @bind-Value="updateEmployee.DesignationId"
+                                 @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.DesignationId, nameof(updateEmployee.DesignationId), "Select designation"))>
+                        <option value="">Select designation</option>
+                        @foreach (var des in designations)
+                        {
+                            <option value="@des.Id">@des.Name</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => updateEmployee.DesignationId" />
+                </div>
+
+            </div>
+            <div class="form-row">
+                <!-- Joining Date -->
+                <div class="form-group">
+                    <label>Joining Date <span class="text-danger">*</span></label>
+                    <InputDate class="form-control" @bind-Value="updateEmployee.JoiningDate"
+                               @bind-Value:after=@(() => ValidateParticularInput(() => updateEmployee.JoiningDate, nameof(updateEmployee.JoiningDate), "JoiningDate is Required")) />
+                    <ValidationMessage For="() => updateEmployee.JoiningDate" />
+                </div>
+
+                <div class="form-group image-group">
+                    <label>Profile</label>
+
+                    <div class="image-container">
+                        <div class="image-preview-wrapper">
+                            @if (!string.IsNullOrEmpty(updateEmployee.ImageUrl))
+                            {
+                                <img src="@updateEmployee.ImageUrl" class="preview-img" />
+                            }
+                            else
+                            {
+                                <div class="placeholder">No Image</div>
+                            }
+                        </div>
+
+                        <InputFile OnChange="HandleImageUpload" class="file-input" />
+                    </div>
+                </div>
+
+            </div>
+            @*          <div class="image-section">
+        <label>Profile</label>
+
+        <InputFile OnChange="HandleImageUpload" />
+
+        @if (!string.IsNullOrEmpty(addEmployee.ImageUrl))
+        {
+            <img src="@addEmployee.ImageUrl" class="preview-img" />
+        }
+        else
+        {
+            <div class="placeholder">No Image</div>
+        }
+    </div> *@
+
+
+            <!-- Buttons -->
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" @onclick="Close">Cancel</button>
+                <button type="submit" class="btn-create">Update</button>
+            </div>
+
+        </EditForm>
+    </div>
+</div>
+@code {
+    private int step = 1;
+
+    private UpdateEmployeeDto updateEmployee = new();
+
+    private List<DepartmentDto> departments = new();
+
+    private List<DesignationDto> designations = new();
+
+    private List<EmployeeDto> managers = new();
+    private List<RolesDto> roles = new();
+
+    public EditContext editContextEmployee { get; set; }
+    public ValidationMessageStore messageStoreEmployee { get; set; }
+
+    [Parameter]
+
+    public int EmployeeId{ get; set; }
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        editContextEmployee = new EditContext(updateEmployee);
+        messageStoreEmployee = new ValidationMessageStore(editContextEmployee);
+        departments = await _department.GetDepartment();
+        designations = await _department.GetDesignation();
+        managers = await _employeeService.GetManagers();
+        roles = await _employeeService.GetAllRolesAsync();
+
+        var data = await _employeeService.GetEmployeeByIdAsync(EmployeeId);
+
+        if (data != null)
+        {
+            updateEmployee = new UpdateEmployeeDto
+                {
+                    EmployeeId = data.Id,
+                    UserId=data.UserId ?? 0,
+                    FirstName = data.FirstName,
+                    LastName = data.LastName,
+                    Phone = data.Phone,
+                    Role = data.Role,
+                    ManagerId = data.ManagerId,
+                    Address = data.Address,
+                    DepartmentId = data.DepartmentId,
+                    DesignationId = data.DesignationId,
+                    JoiningDate = data.JoiningDate,
+                    ImageUrl = data.ImageUrl
+                };
+            editContextEmployee = new EditContext(updateEmployee);
+
+        }
+    }
+
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        updateEmployee.ImageFile = file;
+
+        // Optional preview (temporary)
+        using var stream = file.OpenReadStream(5 * 1024 * 1024);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+
+
+        var buffer = ms.ToArray();
+
+        // var buffer = new byte[file.Size];
+        // await file.OpenReadStream().ReadAsync(buffer);
+
+        updateEmployee.ImageUrl =
+            $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+    }
+    private async Task<string> SaveFile(IBrowserFile file)
+    {
+        var fileName = Guid.NewGuid() + Path.GetExtension(file.Name);
+
+        var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+
+        if (!Directory.Exists(folder))
+            Directory.CreateDirectory(folder);
+
+        var path = Path.Combine(folder, fileName);
+
+        using var stream = new FileStream(path, FileMode.Create);
+        await file.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream);
+
+        return "/images/" + fileName;
+    }
+    private async Task<bool> ValidateCurrentStep()
+    {
+        messageStoreEmployee.Clear();
+
+        // ✔ Validation trigger only when both are empty
+
+        Require(() => updateEmployee.FirstName, nameof(updateEmployee.FirstName), "First Name is required");
+        Require(() => updateEmployee.Phone, nameof(updateEmployee.Phone), "Phone Number is required");
+        Require(() => updateEmployee.Role, nameof(updateEmployee.Role), "Select Role");
+        if (updateEmployee.Role == "Employee")
+        {
+            Require(() => updateEmployee.ManagerId, nameof(updateEmployee.ManagerId), "Manager is required");
+        }
+        Require(() => updateEmployee.Address, nameof(updateEmployee.Address), "Address is required");
+        Require(() => updateEmployee.DepartmentId, nameof(updateEmployee.DepartmentId), "Select Department");
+        Require(() => updateEmployee.DesignationId, nameof(updateEmployee.DesignationId), "Select Designation");
+        Require(() => updateEmployee.JoiningDate, nameof(updateEmployee.JoiningDate), "Joining Date is Required");
+
+
+
+
+        // Notify UI about validation changes
+        editContextEmployee.NotifyValidationStateChanged();
+
+        // Get current validation messages (optional: for logging)
+        var errors = editContextEmployee.GetValidationMessages().ToList();
+
+        // Check if form is valid
+        bool isValid = !editContextEmployee.GetValidationMessages().Any();
+
+        // Return validity
+        return isValid;
+
+    }
+    private void Require<T>(Expression<Func<T>> accessor, string fieldName, string message)
+    {
+        var value = accessor.Compile().Invoke();
+        var fieldIdentifier = new FieldIdentifier(updateEmployee, fieldName);
+
+        // Clear old message first
+        messageStoreEmployee.Clear(fieldIdentifier);
+
+        // Add message if invalid
+        bool isEmpty = value == null ||
+                       (value is string s && string.IsNullOrWhiteSpace(s)) ||
+                       (value is Guid g && g == Guid.Empty);
+
+        if (isEmpty)
+        {
+            messageStoreEmployee.Add(fieldIdentifier, message);
+        }
+
+        editContextEmployee.NotifyFieldChanged(fieldIdentifier);
+        editContextEmployee.NotifyValidationStateChanged();
+    }
+    private Task ValidateParticularInput<T>(Expression<Func<T>> accessor, string fieldName, string validationMsg)
+    {
+        Require(accessor, fieldName, validationMsg);
+        editContextEmployee.NotifyValidationStateChanged();
+        return Task.CompletedTask;
+    }
+    public async Task Save()
+    {
+        if (!await ValidateCurrentStep()) return;
+        spinnerService.Show();
+        await Task.Delay(500);
+        if (updateEmployee.ImageFile != null)
+        {
+            updateEmployee.ImageUrl = await SaveFile(updateEmployee.ImageFile);
+        }
+        updateEmployee.UserId = updateEmployee.UserId;
+        updateEmployee.UserName = updateEmployee.FirstName;
+        updateEmployee.UserEmail = updateEmployee.FirstName.ToLower() + "@gmail.com";
+        // updateEmployee.Password = "Abcd@123";
+
+        await _employeeService.UpdateEmployeeAsync(updateEmployee);
+
+        await OnSaved.InvokeAsync();
+        await OnClose.InvokeAsync();
+        spinnerService.Hide();
+    }
+
+    public async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}
+

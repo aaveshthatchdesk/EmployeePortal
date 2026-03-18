@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,6 +7,7 @@ namespace Application.Dtos
 {
     public  class AddEmployeeDto
     {
+       
         public string FirstName { get; set; }
 
         public string LastName { get; set; }
@@ -30,6 +32,7 @@ namespace Application.Dtos
 
         public int? RoleId { get; set;}
         public string  Role { get; set; }
+        public IBrowserFile? ImageFile { get; set; }
         public string? ImageUrl {  get; set; }
     }
 }

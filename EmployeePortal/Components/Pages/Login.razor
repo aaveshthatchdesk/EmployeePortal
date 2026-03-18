@@ -2,11 +2,13 @@
 @layout EmptyLayout
 @using Application.Dtos
 @using Application.Interfaces.IService
+@using EmployeePortal.Services
 @inject IAuthService authService
 @rendermode InteractiveServer
 @inject NavigationManager nav
 @inject HttpClient http
 @inject IJSRuntime JS
+@inject SpinnerService spinner
 
 <style>
     .btn-outline-dark {
@@ -45,7 +47,12 @@
            
             <p class="text-muted small mb-0">Please login to your account</p>
         </div>
-
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger text-center">
+                @errorMessage
+            </div>
+        }
         <!-- Login Form -->
         <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm" method="Post">
             <DataAnnotationsValidator />
@@ -86,26 +93,34 @@
 @code {
 
     private LoginDto loginModel = new LoginDto();
-
+    private string errorMessage = "";
 
     public async Task HandleLogin()
     {
+        errorMessage = "";
         // var response = await http.PostAsJsonAsync("/api/login", loginModel);
-       
+
+        spinner.Show();
+        await Task.Delay(1000);
         var response = await JS.InvokeAsync<LoginResponseDto>(
         "loginUser",
         "/api/login",
         loginModel
     );
 
+       
 
-        // if (response.IsSuccessStatusCode)
-        // {
-        //     nav.NavigateTo("/admindashboard", true);
-        // }
+        spinner.Hide();
+       
+
+        if (!(bool)response.ok)
+        {
+            errorMessage = response.statusText ?? "Login failed";
+            return;
+        }
         if (response.ok)
         {
-           
+
             nav.NavigateTo("/admindashboard", true);
         }
     }
@@ -120,11 +135,18 @@
             },
             body: JSON.stringify(data)
         });
+         let message = "";
 
+        try {
+            const result = await response.json(); // 👈 read body
+            message = result.message;
+        } catch {
+            message = response.statusText; // fallback
+        }
         return {
             ok: response.ok,
             status: response.status,
-            statusText: response.statusText
+            statusText:message
         };
     }
 </script>

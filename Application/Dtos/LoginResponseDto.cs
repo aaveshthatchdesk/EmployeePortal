@@ -9,5 +9,6 @@ namespace Application.Dtos
         public bool ok { get; set; }
         public int status { get; set; }
         public string statusText { get; set; }
+
     }
 }

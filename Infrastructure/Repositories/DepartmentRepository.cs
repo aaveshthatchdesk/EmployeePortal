@@ -23,7 +23,9 @@ namespace Infrastructure.Repositories
         }
         public async Task<List<Designation>> GetDesignations()
         {
-            return await _context.designations.ToListAsync();
+            return await _context.designations
+            .GroupBy(d => d.Name)
+            .Select(g => g.First()).ToListAsync();
         }
     }
 }

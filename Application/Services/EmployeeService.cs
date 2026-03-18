@@ -20,10 +20,10 @@ namespace Application.Services
         }
 
 
-        public async Task<EmployeesSummary> DashboardSummary()
+        public async Task<EmployeesSummary> DashboardSummary(string role, int userId)
         {
             var today = DateTime.Now;
-            var totalemployees = await _employeeRepository.GetTotalEmployees();
+            var totalemployees = await _employeeRepository.GetTotalEmployees(role,userId);
             var activeemployees = await _employeeRepository.GetActiveEmployees(today);
             var employeesOnLeave = await _employeeRepository.GetEmployessOnLeave(today);
             var inactiveemployees=totalemployees-activeemployees-employeesOnLeave;
@@ -59,6 +59,32 @@ namespace Application.Services
                 Name = d.Name,
 
             }).ToList();
+        }
+
+        public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)
+        {
+            var employee = await _employeeRepository.GetEmployeeByIdAsync(id);
+
+            if (employee == null) return null;
+
+            return new EmployeeDto
+            {
+                Id = employee.Id,
+                UserId=employee.UserId,
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
+                Phone = employee.Phone,
+                Address = employee.Address,
+                DepartmentId = employee.DepartmentId,
+                Department=employee.Department.Name,
+                DesignationId = employee.DesignationId,
+                Designation=employee.Designation.Name,
+                ManagerId = employee.ManagerId,
+                Role = employee.User.Roles.Name,
+                Email = employee.User.Email,
+                JoiningDate = employee.JoiningDate,
+                ImageUrl = employee.ProfilePhoto
+            };
         }
         public async Task<PagedResult<EmployeeDto>> GetEmployeesByUserRole(int userId, string role, int pageNumber, int pageSize, string? search)
         {
@@ -112,8 +138,7 @@ namespace Application.Services
 
         public async Task AddEmployeeAsync(AddEmployeeDto dto)
         {
-            using var sha = SHA256.Create();
-            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(dto.Password));
+           
 
             var user = new Users
             {
@@ -135,10 +160,41 @@ namespace Application.Services
                 DesignationId = dto.DesignationId,
                 ManagerId = dto.ManagerId,
                 JoiningDate = dto.JoiningDate,
-                ProfilePhoto = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "/images/default-avatar.png" : dto.ImageUrl
+                ProfilePhoto = string.IsNullOrWhiteSpace(dto.ImageUrl) ? "/images/default-user.png" : dto.ImageUrl
             };
 
             await _employeeRepository.AddEmployeeWithUserAsync(user, employee, dto.Role);
+        }
+
+        public async Task UpdateEmployeeAsync(UpdateEmployeeDto dto)
+        {
+            var user = new Users
+            {
+                Id = dto.UserId, 
+                Name = dto.UserName,
+                Email = dto.UserEmail,
+                PasswordHash = string.IsNullOrWhiteSpace(dto.Password)
+                    ? null
+                    : BCrypt.Net.BCrypt.HashPassword(dto.Password)
+            };
+
+            var employee = new Employee
+            {
+                Id = dto.EmployeeId, 
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Address = dto.Address,
+                Phone = dto.Phone,
+                DepartmentId = dto.DepartmentId,
+                DesignationId = dto.DesignationId,
+                ManagerId = dto.ManagerId,
+                JoiningDate = dto.JoiningDate,
+                ProfilePhoto = string.IsNullOrWhiteSpace(dto.ImageUrl)
+                    ? "/images/default-user.png"
+                    : dto.ImageUrl
+            };
+
+            await _employeeRepository.UpdateEmployeeWithUserAsync(user, employee, dto.Role);
         }
 
 
