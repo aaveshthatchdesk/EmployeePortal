@@ -58,6 +58,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<SpinnerService>();
+builder.Services.AddScoped<IAttendanceService,AttendanceService>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

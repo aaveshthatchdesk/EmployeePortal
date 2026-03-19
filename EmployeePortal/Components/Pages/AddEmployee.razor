@@ -54,6 +54,7 @@
         padding: 8px;
         border-radius: 6px;
         border: 1px solid #ccc;
+        min-height:42px;
     }
 
     .modal-actions {
@@ -209,9 +210,11 @@
             
 
                 <!-- Department -->
-                <div class="form-group">
+                <div class="form-group  ">
                     <label>Department <span class="text-danger">*</span></label>
-                    <InputSelect class="form-control" @bind-Value="addEmployee.DepartmentId"
+                    <div class="d-flex  align-items-center gap-2">
+                        <div class="flex-grow-1">
+                    <InputSelect class="form-control w-100" @bind-Value="addEmployee.DepartmentId"
                                  @bind-Value:after=@(() => ValidateParticularInput(() => addEmployee.DepartmentId, nameof(addEmployee.DepartmentId), "Select department"))>
                         <option value="">Select department</option>
                         @foreach (var dept in departments)
@@ -219,12 +222,23 @@
                             <option value="@dept.Id">@dept.Name</option>
                         }
                     </InputSelect>
-                    <ValidationMessage For="() => addEmployee.DepartmentId" />
-                </div>
 
+                    </div>
+                        @if (userRole == "Admin")
+                        {
+                            <div>
+                                <button type="button" class="btn-create" @onclick="OpenDepartmentModal">+</button>
+                            </div>
+                        }
+                        <ValidationMessage For="() => addEmployee.DepartmentId" />
+                    </div>
+                </div>
+               
                 <!-- Designation -->
                 <div class="form-group">
                     <label>Designation <span class="text-danger">*</span></label>
+                    <div class="d-flex  align-items-center gap-2">
+                        <div class="flex-grow-1">
                     <InputSelect class="form-control" @bind-Value="addEmployee.DesignationId"
                                  @bind-Value:after=@(() => ValidateParticularInput(() => addEmployee.DesignationId, nameof(addEmployee.DesignationId), "Select designation"))>
                         <option value="">Select designation</option>
@@ -233,7 +247,15 @@
                             <option value="@des.Id">@des.Name</option>
                         }
                     </InputSelect>
+                    </div>
+                    @if(userRole=="Admin")
+                    {
+                    <div>
+                        <button type="button" class="btn-create" @onclick="OpenDesignationModal">+</button>
+                    </div>
+                    }
                     <ValidationMessage For="() => addEmployee.DesignationId" />
+                        </div>
                 </div>
            
             </div>
@@ -291,12 +313,70 @@
         </EditForm>
     </div>
 </div>
+@if (showDepartmentModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-box" style="width:400px;">
+
+            <h5>Add Department<span class="text-danger">*</span></h5>
+
+            <EditForm Model="department" OnValidSubmit="SaveDepartment">
+                <DataAnnotationsValidator />
+              
+
+                <InputText class="form-control"
+                           @bind-Value="department.Name"
+                           placeholder="Enter department name" />
+
+                <ValidationMessage For="() => department.Name" />
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" @onclick="CloseDepartmentModal">Cancel</button>
+                    <button type="submit" class="btn-create">Save</button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+}
+@if (showDesignationModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-box" style="width:400px;">
+
+            <h5>Add Designation<span class="text-danger">*</span></h5>
+
+            <EditForm Model="designation" OnValidSubmit="SaveDesignation">
+                <DataAnnotationsValidator />
+
+
+                <InputText class="form-control"
+                           @bind-Value="designation.Name"
+                           placeholder="Enter designation name" />
+
+                <ValidationMessage For="() => designation.Name" />
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" @onclick="CloseDesignationModal">Cancel</button>
+                    <button type="submit" class="btn-create">Save</button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+}
 @code {
     private int step = 1;
 
+    [Parameter] 
+    public string? userRole{ get; set; }
+
     private AddEmployeeDto addEmployee = new();
 
+    private DepartmentDto department = new();
     private List<DepartmentDto> departments =new();
+
+    private DesignationDto designation = new();
 
     private List<DesignationDto> designations = new();
 
@@ -305,6 +385,9 @@
 
     public EditContext editContextEmployee{ get; set; }
     public ValidationMessageStore messageStoreEmployee { get; set; }
+    public bool showDepartmentModal = false;
+    public bool showDesignationModal = false;
+
 
 
     [Parameter]
@@ -420,6 +503,64 @@
         Require(accessor, fieldName, validationMsg);
         editContextEmployee.NotifyValidationStateChanged();
         return Task.CompletedTask;
+    }
+
+    public void OpenDepartmentModal()
+    {
+        showDepartmentModal = true;
+    }
+
+    public void CloseDepartmentModal()
+    {
+        showDepartmentModal = false;
+    }
+    public void OpenDesignationModal()
+    {
+        showDesignationModal = true;
+    }
+
+    public void CloseDesignationModal()
+    {
+        showDesignationModal = false;
+    }
+    private async Task SaveDepartment()
+    {
+        if (userRole != "Admin")
+            return;
+        spinnerService.Show();
+        await Task.Delay(500);
+        var created = await _department.AddDepartmentAsync(department);
+
+
+        departments = await _department.GetDepartment();
+
+
+        addEmployee.DepartmentId = created.Id;
+
+        showDepartmentModal = false;
+
+        spinnerService.Hide();
+    }
+
+    private async Task SaveDesignation()
+    {
+        if (userRole != "Admin")
+            return;
+
+        spinnerService.Show();
+        await Task.Delay(500);
+
+        var created = await _department.AddDesignationAsync(designation);
+
+
+        designations = await _department.GetDesignation();
+
+
+        addEmployee.DesignationId = created.Id;
+
+        showDesignationModal = false;
+
+        spinnerService.Hide();
     }
     public async Task Save()
     {

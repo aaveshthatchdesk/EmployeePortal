@@ -10,7 +10,8 @@ namespace Application.Interfaces.IRepository
     {
 
         Task<int> GetTotalEmployees(string role, int userId);
-        Task<int> GetActiveEmployees(DateTime date);
+        Task<int> GetActiveEmployees(int userId, string role, DateTime date);
+        Task<int> GetInActiveEmployees(int userId, string role, DateTime date);
         Task<int> GetEmployessOnLeave(DateTime date);
         Task<List<Employee>> GetAllManagersAsync();
         Task<List<Role>> GetAllRoles();

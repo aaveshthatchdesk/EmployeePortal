@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Text;
 using static Domain.Enums.Step;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -39,9 +40,64 @@ namespace Infrastructure.Repositories
             return 0;
 
         }
-        public async Task<int> GetActiveEmployees(DateTime date)
+        public async Task<int> GetActiveEmployees(int userId, string role,DateTime date)
         {
-            return await _context.attendances.Where(a => a.Date == date && a.Status == AttendanceStatus.Present).CountAsync();
+            var start = date.Date;
+            var end = start.AddDays(1);
+
+            if (role == "Admin")
+            {
+                return await _context.employees
+                    .Include(a => a.Attendances)
+                    .Where(e => e.Attendances.Any(a => a.Date >= start && a.Date < end && a.Status == AttendanceStatus.Present))
+            .CountAsync();
+            }
+            else if(role=="Manager")
+            {
+                var manager = await _context.employees .FirstOrDefaultAsync(e => e.UserId == userId);
+
+                if (manager == null) return 0;
+                return await _context.employees
+            .Where(e => e.ManagerId == manager.Id &&
+                        e.Attendances.Any(a =>
+                            a.Date >= start &&
+                            a.Date < end &&
+                            a.Status == AttendanceStatus.Present))
+            .CountAsync();
+            }
+            return 0;
+        }
+
+        public async Task<int> GetInActiveEmployees(int userId,string role,DateTime date)
+        {
+            var start = date.Date;
+            var end = start.AddDays(1);
+
+            if (role == "Admin")
+            {
+                return await _context.employees
+                    .Where(e => !e.Attendances.Any(a =>
+                        a.Date >= start &&
+                        a.Date < end &&
+                        a.Status == AttendanceStatus.Present))
+                    .CountAsync();
+            }
+            else if (role == "Manager")
+            {
+                var manager = await _context.employees
+                    .FirstOrDefaultAsync(e => e.UserId == userId);
+
+                if (manager == null) return 0;
+
+                return await _context.employees
+                    .Where(e => e.ManagerId == manager.Id &&
+                                !e.Attendances.Any(a =>
+                                    a.Date >= start &&
+                                    a.Date < end &&
+                                    a.Status == AttendanceStatus.Present))
+                    .CountAsync();
+            }
+            return 0;
         }
 
         public async Task<int> GetEmployessOnLeave(DateTime date)
@@ -98,6 +154,10 @@ namespace Infrastructure.Repositories
                 {
                     query = query.Where(t => t.ManagerId == managerEmployee.Id);
                 }
+            }
+            else if(role=="Employee")
+            {
+                query = query.Where(e => e.UserId == userId);
             }
             if (!string.IsNullOrEmpty(search))
             {

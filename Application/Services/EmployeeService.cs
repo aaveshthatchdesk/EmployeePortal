@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using static Domain.Enums.Step;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Services
 {
@@ -24,9 +25,9 @@ namespace Application.Services
         {
             var today = DateTime.Now;
             var totalemployees = await _employeeRepository.GetTotalEmployees(role,userId);
-            var activeemployees = await _employeeRepository.GetActiveEmployees(today);
+            var activeemployees = await _employeeRepository.GetActiveEmployees(userId,role,today);
             var employeesOnLeave = await _employeeRepository.GetEmployessOnLeave(today);
-            var inactiveemployees=totalemployees-activeemployees-employeesOnLeave;
+            var inactiveemployees=await _employeeRepository.GetInActiveEmployees(userId,role,today);
 
             return new  EmployeesSummary
             {
@@ -91,29 +92,42 @@ namespace Application.Services
            
             
                 var(employees,totalCount)=await _employeeRepository.GetAllEmployeesAsync(userId, role, pageNumber, pageSize, search);
-            
-          
-            var today= DateTime.Now;
-            var result = employees.Select(e =>
-            {
-                string status = "Inactive";
+            //string status = "Inactive";
+            var start = DateTime.Today;
+            var end = start.AddDays(1);
 
-                var leave = e.LeaveRequests
-                    ?.FirstOrDefault(l => l.Status == LeaveStatus.Approved &&
-                                          today >= l.StartDate.Date &&
-                                          today <= l.EndDate.Date);
+            var today = DateTime.Now;
+            //var result = employees.Select(e =>
+            //{
+            //    string status = "Inactive";
+            //    var start = DateTime.Today;
+            //    var end = start.AddDays(1);
 
-                var attendance = e.Attendances
-                    ?.FirstOrDefault(a => a.Date.Date == today);
+                //var attendance = e.Attendances
+                //    ?.FirstOrDefault(a => a.Date>start && a.Date<end);
 
-                if (leave != null)
-                    status = "On Leave";
-                else if (attendance != null &&
-                        (attendance.Status == AttendanceStatus.Present ||
-                         attendance.Status == AttendanceStatus.Late))
-                    status = "Active";
+                //if (attendance != null)
+                //{
+                //    if (attendance.Status == AttendanceStatus.Present ||
+                //        attendance.Status == AttendanceStatus.Late)
+                //    {
+                //        status = "Active";
+                //    }
+                //    else if (attendance.Status == AttendanceStatus.Absent)
+                //    {
+                //        status = "Inactive";
+                //    }
+                //}
+                var result = employees.Select(e =>
+                {
+                    var isActive = e.Attendances
+                        ?.Any(a => a.Date >= start &&
+                                   a.Date < end &&
+                                   (a.Status == AttendanceStatus.Present ||
+                                    a.Status == AttendanceStatus.Late)) ?? false;
 
-                return new EmployeeDto
+
+                    return new EmployeeDto
                 {
                     Id = e.Id,
                     FirstName = e.FirstName,
@@ -124,8 +138,8 @@ namespace Application.Services
                     ManagerId = e.ManagerId ?? 0,
                     ImageUrl = e.ProfilePhoto,
                     JoiningDate = e.JoiningDate,
-                    Status = status
-                };
+                    Status = isActive ? "Active" : "Inactive"
+                    };
 
             }).ToList();
             return new PagedResult<EmployeeDto>
